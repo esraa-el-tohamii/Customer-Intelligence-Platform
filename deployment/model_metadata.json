@@ -1,0 +1,33 @@
+{
+    "project_name": "Customer Churn Prediction",
+    "model_name": "Gradient Boosting(Tuned)",
+    "target_column": "Churn",
+    "prediction_classes": {
+        "0": "Stayed",
+        "1": "Churned"
+    },
+    "features": [
+        "Age",
+        "Gender",
+        "Tenure",
+        "Usage Frequency",
+        "Support Calls",
+        "Payment Delay",
+        "Subscription Type",
+        "Contract Length",
+        "Total Spend",
+        "Last Interaction",
+        "Spend_Per_Tenure",
+        "Support_Calls_Per_Usage"
+    ],
+    "number_of_features": 12,
+    "evaluation_metrics": {
+        "Accuracy": 0.9363531996595476,
+        "Precision": 0.8983254739678568,
+        "Recall": 0.998360042068486,
+        "F1 Score": 0.9457047574823758,
+        "ROC AUC": 0.9535903337375964
+    },
+    "threshold": 0.5,
+    "sklearn_version": "1.6.1"
+}

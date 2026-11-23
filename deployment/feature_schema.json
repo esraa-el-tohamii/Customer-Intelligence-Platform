@@ -1,0 +1,14 @@
+{
+    "Age": "number",
+    "Gender": "string",
+    "Tenure": "number",
+    "Usage Frequency": "number",
+    "Support Calls": "number",
+    "Payment Delay": "number",
+    "Subscription Type": "string",
+    "Contract Length": "string",
+    "Total Spend": "number",
+    "Last Interaction": "number",
+    "Spend_Per_Tenure": "number",
+    "Support_Calls_Per_Usage": "number"
+}
