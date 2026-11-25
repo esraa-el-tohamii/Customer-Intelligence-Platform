@@ -5,17 +5,20 @@ A FastAPI backend for the exported scikit-learn customer churn pipeline. The bac
 ## Architecture
 
 - `app/main.py`: FastAPI application, startup lifespan, endpoints, and HTTP error responses.
-- `app/model_loader.py`: Loads the deployment JSON files and joblib pipeline once at startup.
+- `app/model_loader.py`: Validates deployment metadata and loads the joblib pipeline once at startup.
 - `app/schemas.py`: Creates Pydantic request models from `feature_schema.json`.
 - `app/services/prediction_service.py`: Reorders features, calls the pipeline, and formats predictions.
+- `app/services/shap_service.py`: Lazily creates a Gradient Boosting permutation explainer from its encoded background data.
 - `deployment/`: Preserved model artifacts.
+
+The saved pipeline already contains its imputation, scaling, and one-hot encoding steps. The API validates raw customer features and passes them to that pipeline without recreating preprocessing.
 
 ## Setup
 
 Python 3.12 is recommended because `customer_churn_model.joblib` was created with scikit-learn 1.6.1.
 
 ```bash
-python -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\activate
 python -m pip install -r requirements.txt
 ```
@@ -100,6 +103,14 @@ Example response:
 
 The batch response contains `count` and a `predictions` array. Missing fields, unexpected fields, invalid types, invalid categorical values, and empty batches return HTTP 422.
 
+### GET /feature-importance
+
+Returns mean absolute SHAP importance for the Gradient Boosting model, aligned with the original feature order. It reads only the Gradient Boosting column from `gradient_boosting_shap_importance.csv`.
+
+### POST /explain
+
+Accepts the same customer object as `/predict`. It computes a fresh local explanation for that request using `shap_background_encoded.pkl` and the deployed pipeline. Positive SHAP values increase churn probability; negative values reduce it. The saved 1,000-row `gradient_boosting_shap_values.npy` sample is not used as an explanation for API customers.
+
 ## Test
 
 ```bash
@@ -117,4 +128,8 @@ pytest -q
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-The `Procfile` also contains this command. Railway supplies `$PORT`; do not set a fixed local port. Commit all files under `deployment/` so the model and JSON metadata are available at runtime.
+The `Procfile` already contains this command. Railway supplies `$PORT`; do not set a fixed local port.
+
+The production service needs these files under `deployment/`: `customer_churn_model.joblib`, `feature_schema.json`, `model_metadata.json`, `final_results.json`, `category_mappings.json`, `shap_feature_names.json`, `gradient_boosting_shap_importance.csv`, and `shap_background_encoded.pkl`.
+
+The following are not loaded by the production API and do not need to be uploaded to Railway: `Datasets/`, `customer-churn.ipynb`, `Explain/`, `gradient_boosting_shap_values.npy`, `gradient_boosting_summary.png`, `gradient_boosting_importance.png`, `gradient_boosting_permutation_importance.csv`, `gradient_boosting_rank_comparison.csv`, `shap_sample.pkl`, `shap_sample_encoded.pkl`, and `shap_background.pkl`. Do not upload training data or notebooks containing customer records to a public repository; verify any notebook outputs before sharing.

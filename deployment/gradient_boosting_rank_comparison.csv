@@ -1,0 +1,13 @@
+Feature,Gradient Boosting - Permutation Rank,Gradient Boosting - SHAP Rank,Random Forest - Permutation Rank,Random Forest - SHAP Rank,XGBoost - Permutation Rank,XGBoost - SHAP Rank
+Support Calls,1.0,1.0,1.0,1.0,1.0,1.0
+Total Spend,3.0,2.0,2.0,2.0,2.0,2.0
+Payment Delay,4.0,3.0,4.0,3.0,4.0,3.0
+Age,2.0,4.0,3.0,4.0,3.0,4.0
+Contract Length,5.0,5.0,5.0,5.0,5.0,5.0
+Gender,6.0,6.0,6.0,6.0,6.0,6.0
+Last Interaction,7.0,7.0,7.0,7.0,7.0,7.0
+Tenure,8.0,8.0,8.0,9.0,10.0,9.0
+Usage Frequency,9.0,9.0,9.0,11.0,8.0,10.0
+Support_Calls_Per_Usage,12.0,10.0,11.0,8.0,11.0,8.0
+Subscription Type,10.0,11.0,10.0,12.0,9.0,12.0
+Spend_Per_Tenure,11.0,12.0,12.0,10.0,12.0,11.0

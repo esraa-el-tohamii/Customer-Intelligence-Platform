@@ -6,6 +6,7 @@
         "0": "Stayed",
         "1": "Churned"
     },
+    "positive_class": 1,
     "features": [
         "Age",
         "Gender",
@@ -19,6 +20,22 @@
         "Last Interaction",
         "Spend_Per_Tenure",
         "Support_Calls_Per_Usage"
+    ],
+    "numerical_features": [
+        "Age",
+        "Tenure",
+        "Usage Frequency",
+        "Support Calls",
+        "Payment Delay",
+        "Total Spend",
+        "Last Interaction",
+        "Spend_Per_Tenure",
+        "Support_Calls_Per_Usage"
+    ],
+    "categorical_features": [
+        "Gender",
+        "Subscription Type",
+        "Contract Length"
     ],
     "number_of_features": 12,
     "evaluation_metrics": {

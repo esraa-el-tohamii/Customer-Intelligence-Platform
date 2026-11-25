@@ -1,14 +1,53 @@
 {
-    "Age": "number",
-    "Gender": "string",
-    "Tenure": "number",
-    "Usage Frequency": "number",
-    "Support Calls": "number",
-    "Payment Delay": "number",
-    "Subscription Type": "string",
-    "Contract Length": "string",
-    "Total Spend": "number",
-    "Last Interaction": "number",
-    "Spend_Per_Tenure": "number",
-    "Support_Calls_Per_Usage": "number"
+    "features": {
+        "Age": {
+            "type": "number",
+            "required": true
+        },
+        "Gender": {
+            "type": "string",
+            "required": true
+        },
+        "Tenure": {
+            "type": "number",
+            "required": true
+        },
+        "Usage Frequency": {
+            "type": "number",
+            "required": true
+        },
+        "Support Calls": {
+            "type": "number",
+            "required": true
+        },
+        "Payment Delay": {
+            "type": "number",
+            "required": true
+        },
+        "Subscription Type": {
+            "type": "string",
+            "required": true
+        },
+        "Contract Length": {
+            "type": "string",
+            "required": true
+        },
+        "Total Spend": {
+            "type": "number",
+            "required": true
+        },
+        "Last Interaction": {
+            "type": "number",
+            "required": true
+        },
+        "Spend_Per_Tenure": {
+            "type": "number",
+            "required": true
+        },
+        "Support_Calls_Per_Usage": {
+            "type": "number",
+            "required": true
+        }
+    },
+    "number_of_features": 12
 }

@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 import numpy as np
@@ -5,37 +6,33 @@ import pandas as pd
 from fastapi import HTTPException
 
 
+logger = logging.getLogger(__name__)
+
+
 class PredictionService:
-    def __init__(self, model: Any, schema: dict[str, str], metadata: dict[str, Any]):
+    def __init__(
+        self,
+        model: Any,
+        schema: dict[str, str],
+        metadata: dict[str, Any],
+        category_mappings: dict[str, list[str]],
+    ):
         self.model = model
         self.schema = schema
         self.metadata = metadata
         self.feature_names = list(metadata["features"])
         self.prediction_classes = metadata["prediction_classes"]
-        self.allowed_categories = self._get_allowed_categories()
-
-    def _get_allowed_categories(self) -> dict[str, list[str]]:
-        preprocessor = getattr(self.model, "named_steps", {}).get("preprocessor")
-        if preprocessor is None:
-            return {}
-
-        categories: dict[str, list[str]] = {}
-        for transformer in getattr(preprocessor, "transformers_", []):
-            name, _, columns = transformer
-            if name == "cat":
-                encoder = None
-                if hasattr(transformer[1], "named_steps"):
-                    encoder = transformer[1].named_steps.get("encoder")
-                if encoder is not None and hasattr(encoder, "categories_"):
-                    for column, values in zip(columns, encoder.categories_):
-                        categories[column] = [str(value) for value in values]
-        return categories
+        self.positive_class = metadata["positive_class"]
+        self.classes = list(model.classes_)
+        self.positive_index = self.classes.index(self.positive_class)
+        self.stay_index = self.classes.index(0)
+        self.allowed_categories = category_mappings
 
     def validate_categorical_values(self, records: list[dict[str, Any]]) -> None:
         for record_index, record in enumerate(records):
             for feature_name, allowed in self.allowed_categories.items():
                 value = record.get(feature_name)
-                if value is not None and str(value) not in allowed:
+                if value not in allowed:
                     allowed_text = ", ".join(repr(category) for category in allowed)
                     raise HTTPException(
                         status_code=422,
@@ -43,8 +40,7 @@ class PredictionService:
                     )
 
     def _dataframe(self, records: list[dict[str, Any]]) -> pd.DataFrame:
-        frame = pd.DataFrame.from_records(records)
-        return frame.reindex(columns=self.feature_names)
+        return pd.DataFrame.from_records(records, columns=self.feature_names)
 
     def predict_one(self, record: dict[str, Any]) -> dict[str, Any]:
         return self.predict_many([record])[0]
@@ -60,30 +56,32 @@ class PredictionService:
             predictions = np.asarray(self.model.predict(frame)).reshape(-1)
             probabilities = np.asarray(self.model.predict_proba(frame))
         except Exception as exc:
+            logger.exception("Prediction failed")
             raise HTTPException(status_code=500, detail="Prediction failed") from exc
 
-        classes = list(getattr(self.model, "classes_", []))
-        if len(classes) == 0:
-            raise HTTPException(status_code=500, detail="Loaded model did not expose prediction classes")
-
-        try:
-            positive_index = classes.index(1)
-        except ValueError:
-            positive_index = int(np.argmax(classes))
+        if (
+            predictions.size != len(records)
+            or probabilities.ndim != 2
+            or probabilities.shape != (len(records), len(self.classes))
+            or not np.isfinite(probabilities).all()
+            or (probabilities < 0).any()
+            or (probabilities > 1).any()
+        ):
+            logger.error("Loaded model returned invalid prediction results")
+            raise HTTPException(status_code=500, detail="Prediction failed")
 
         results: list[dict[str, Any]] = []
+        label_lookup = {str(key): str(value) for key, value in self.prediction_classes.items()}
         for prediction, row_probabilities in zip(predictions, probabilities):
             class_value = int(prediction)
-            positive_probability = float(row_probabilities[positive_index])
-            retention_probability = float(row_probabilities[classes.index(0)]) if 0 in classes else float(1.0 - positive_probability)
-            churn_probability = positive_probability
-
-            label_lookup = {str(key): str(value) for key, value in self.prediction_classes.items()}
+            churn_probability = float(row_probabilities[self.positive_index])
+            retention_probability = float(row_probabilities[self.stay_index])
             prediction_label = label_lookup.get(str(class_value), str(class_value))
-            if class_value == 1:
-                message = "This customer is likely to churn."
-            else:
-                message = "This customer is likely to stay."
+            message = (
+                "This customer is likely to churn."
+                if class_value == self.positive_class
+                else "This customer is likely to stay."
+            )
 
             results.append(
                 {

@@ -1,6 +1,7 @@
+import math
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, field_validator
+from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, StrictStr, field_validator
 
 
 NUMBER_TYPES = (StrictInt, StrictFloat)
@@ -14,15 +15,24 @@ def create_customer_model(
     allowed_categories = allowed_categories or {}
     namespace: dict[str, Any] = {
         "__annotations__": annotations,
-        "model_config": ConfigDict(extra="forbid"),
+        "model_config": ConfigDict(extra="forbid", strict=True),
     }
 
     for feature_name, data_type in feature_schema.items():
         if data_type == "number":
             annotations[feature_name] = StrictInt | StrictFloat
             namespace[feature_name] = ...
+
+            def validate_finite_number(value: int | float) -> int | float:
+                if not math.isfinite(value):
+                    raise ValueError("must be a finite number")
+                return value
+
+            namespace[f"validate_{feature_name.replace(' ', '_')}"] = field_validator(
+                feature_name, mode="after"
+            )(validate_finite_number)
         elif data_type == "string":
-            annotations[feature_name] = str
+            annotations[feature_name] = StrictStr
             namespace[feature_name] = ...
         else:
             raise ValueError(f"Unsupported feature type in schema: {data_type}")
